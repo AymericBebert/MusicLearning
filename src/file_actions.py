@@ -118,8 +118,9 @@ def to_mp3(ini, out, bitrate='320k'):
 
 def to_wav(ini, out):
     """Converts the file to an wav file"""
-    options = ['-threads', 'auto', '-y', '-loglevel', 'quiet']
-    call(['avconv', '-i', ini] + options + [out])
+    # options = ['-threads', 'auto', '-y', '-loglevel', 'quiet']
+    # call(['avconv', '-i', ini] + options + [out])
+    call(['mpg123', '-w', out, ini])
     writeLog('debug', 'File {} created!'.format(out))
 
 
