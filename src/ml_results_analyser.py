@@ -21,8 +21,8 @@ def fillIfNeeded(A, B):
 
 def printResults(labels, output):
     """Logs the results"""
-    writeLog("debug", "output: {}".format(', '.join([str(x).zfill(2) for x in output])))
-    writeLog("debug", "labels: {}".format(', '.join([str(y).zfill(2) for y in labels])))
+    writeLog("debug", "output: {}".format(", ".join([str(x).zfill(2) for x in output])))
+    writeLog("debug", "labels: {}".format(", ".join([str(y).zfill(2) for y in labels])))
     labels, output = fillIfNeeded(labels, output)
     confusionMatrix(labels, output)
     perfsByLabel(labels, output)
@@ -36,10 +36,10 @@ def confusionMatrix(Y, Z):
         M.append([0]*n)
     for i, y in enumerate(Y):
         M[y][Z[i]] += 1
-    s = "Confustion matrix:\n"
-    s += 'L\\O' + '|'.join([str(x).rjust(2) for x in range(n)]) + '\n'
+    s = "Confusion matrix:\n"
+    s += "L\\O" + "|".join([str(x).rjust(2) for x in range(n)]) + "\n"
     for i in range(n):
-        s += str(i).zfill(2) + '|' + ' '.join([str(x).rjust(2) for x in M[i]]) + '\n'
+        s += str(i).zfill(2) + "|" + " ".join([str(x).rjust(2) for x in M[i]]) + "\n"
     print(s)
 
 

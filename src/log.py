@@ -25,13 +25,13 @@ consoleColors = {
 }
 
 
-def uprint(*objects, sep=' ', end='\n', file=sys.stdout):
+def uprint(*objects, sep=" ", end="\n", file=sys.stdout):
     """Wrapper for print, useful with Windows (avoid some encoding problems)"""
     enc = file.encoding
-    if enc == 'UTF-8':
+    if enc == "UTF-8":
         print(*objects, sep=sep, end=end, file=file)
     else:
-        f = lambda obj: str(obj).encode(enc, errors='backslashreplace').decode(enc)
+        f = lambda obj: str(obj).encode(enc, errors="backslashreplace").decode(enc)
         print(*map(f, objects), sep=sep, end=end, file=file)
 
 
@@ -67,7 +67,7 @@ def writeLog(level, text, options=None, limit=3000):
         time = strftime("%H:%M:%S", localtime())
         s = "{} - {} - {}".format(time, level.upper(), text)
         if limit is not None and len(s) > limit-3:
-            s = s[:limit-3] + '...'
+            s = s[:limit-3] + "..."
         if level in consoleColors:
             s = consoleColors[level] + s + "\033[0m"
         uprint(s)
@@ -86,6 +86,6 @@ def logAndCall(arg):
     if isinstance(arg, str):
         s = arg
     else:
-        s = ' '.join(['"'+a+'"' if ' ' in a else a for a in arg])
-    writeLog('call', s, {"inFile": False})
+        s = " ".join(['"{}"'.format(a) if " " in a else a for a in arg])
+    writeLog("call", s, {"inFile": False})
     subprocess.call(arg)

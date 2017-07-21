@@ -103,3 +103,4 @@ ENV/
 # others
 src/config.ini
 data/
+tmp/

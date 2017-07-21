@@ -27,6 +27,11 @@ def extract_mfcc(sound_obj, avg=True):
 
 def extract_all_features(sound_obj):
     """Extract the features from the sound object"""
-    fl = file_length(sound_obj["params"])
+    # fl = file_length(sound_obj["params"])
     test_mfcc_avg = extract_mfcc(sound_obj)
-    return np.concatenate(([fl], test_mfcc_avg))
+    # return np.concatenate(([fl], test_mfcc_avg))
+    return test_mfcc_avg
+
+def features_labels():
+    """Give a name to each feature"""
+    return ["mfcc{}".format(i) for i in range(13)]
