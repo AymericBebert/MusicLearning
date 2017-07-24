@@ -20,10 +20,11 @@ def extract_mfcc(sound_obj, avg=True):
     sr = sound_obj["params"][2]  # samplerate
     # nf = sound_obj["params"][3]  # nframes
 
-    test_mfcc = python_speech_features.mfcc(soundD, samplerate=sr, winlen=0.025, winstep=1)
+    all_mfcc = python_speech_features.mfcc(soundD, samplerate=sr, winlen=0.025, winstep=1)
     if avg:
-        return np.mean(test_mfcc, axis=0)
-    return test_mfcc
+        return np.mean(all_mfcc, axis=0)
+    return all_mfcc
+
 
 def extract_all_features(sound_obj):
     """Extract the features from the sound object"""
@@ -31,6 +32,7 @@ def extract_all_features(sound_obj):
     test_mfcc_avg = extract_mfcc(sound_obj)
     # return np.concatenate(([fl], test_mfcc_avg))
     return test_mfcc_avg
+
 
 def features_labels():
     """Give a name to each feature"""

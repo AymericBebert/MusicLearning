@@ -10,6 +10,10 @@ import os
 import wave
 from subprocess import call
 import glob
+
+import numpy as np
+from pydub import AudioSegment
+
 from log import writeLog
 from timer import timer_start, timer_stop
 
@@ -27,63 +31,34 @@ def display_params(soundParams):
 
 
 def extract_sound(soundFileLoc):
-    """Extract the wav file soundFileLoc into a list of integers"""
+    """Extract the wav file soundFileLoc into a numpy array, shape (nbch, nbs)"""
     timer_start("Extracting {}".format(soundFileLoc), True)
-    soundFile = wave.open(soundFileLoc, "rb")
-    soundParams = soundFile.getparams()
-    # number of channels, sample size, sampling frequency, number of samples
-    nbch, ss, _, nbs = soundParams[:4]
-    param = "-bhiq"[ss]
-    if nbch == 1:
-        sound = [wave.struct.unpack("<"+str(nbs)+param, soundFile.readframes(nbs))]
-    elif nbch == 2:
-        sound0 = wave.struct.unpack("<"+str(2*nbs)+param, soundFile.readframes(nbs))
-        sound = [[0]*nbs, [0]*nbs]
-        for i in range(nbs):
-            sound[0][i], sound[1][i] = sound0[2*i], sound0[2*i+1]
+    err_return = np.array([[]]), (0, 0, 0, 0, "NONE", "not compressed")
+    if os.path.splitext(soundFileLoc)[1].lower() in (".mp3", ".wav", ".au"):
+        try:
+            audiofile = AudioSegment.from_file(soundFileLoc)
+        except Exception:
+            writeLog("error", "File not found or other I/O error. (DECODING FAILED)")
+            return err_return
+
+        if audiofile.sample_width == 2:
+            data = np.fromstring(audiofile.raw_data, np.int16)
+        elif audiofile.sample_width == 4:
+            data = np.fromstring(audiofile.raw_data, np.int32)
+        else:
+            writeLog("error", "extract_sound(): sample_width is not 2 or 4")
+            return err_return
+        sf = audiofile.frame_rate
+        x = []
+        for chn in range(audiofile.channels):
+            x.append(data[chn::audiofile.channels])
+        x = np.array(x)
     else:
-        writeLog("error", "Not a mono nor stereo file")
-    soundFile.close()
+        writeLog("error", "readAudioFile(): Unknown file type!")
+        return err_return
     timer_stop("Extracting {}".format(soundFileLoc))
-    return sound, soundParams
-
-
-def extract_sound_light(soundFileLoc, ratio=0.3, duration=5):
-    """
-    Extract a part of the wav file soundFileLoc into a list of integers
-    ratio: where to start (0.-1.), duration: number of seconds to extract
-    """
-    timer_start("Extracting {}".format(soundFileLoc), True)
-    soundFile = wave.open(soundFileLoc, "rb")
-    soundParams = soundFile.getparams()
     # number of channels, sample size, sampling frequency, number of samples
-    nbch, ss, sf, nbs = soundParams[:4]
-    param = "-bhiq"[ss]
-    if nbch == 1:
-        soundFile.setpos(int(nbs*ratio))
-        nbs_light = duration*sf
-        sound = [wave.struct.unpack("<"+str(nbs_light)+param, soundFile.readframes(nbs_light))]
-    elif nbch == 2:
-        soundFile.setpos(2*(int(nbs*ratio)//2))
-        nbs_light = 2*((duration*sf)//2)
-        sound0 = wave.struct.unpack("<"+str(2*nbs_light)+param, soundFile.readframes(nbs_light))
-        # directly transform to mono
-        sound = [[x for i, x in enumerate(sound0) if i%2 == 0]]
-    else:
-        writeLog("error", "Not a mono nor stereo file")
-    soundFile.close()
-    timer_stop("Extracting {}".format(soundFileLoc))
-    soundParams = (1,) + soundParams[1:3] + (nbs_light,) + soundParams[4:]
-    return sound, soundParams
-
-
-def crop(x, a, b):
-    """crop x between a and b"""
-    if x < a:
-        return a
-    elif x > b:
-        return b
-    return x
+    return x, (x.shape[0], audiofile.sample_width, sf, x.shape[1], "NONE", "not compressed")
 
 
 def write_sound(sound, soundParams, soundFileLoc):
@@ -93,12 +68,9 @@ def write_sound(sound, soundParams, soundFileLoc):
     if nbch == 1:
         rawSound = sound[0]
     elif nbch == 2:
-        rawSound = [0]*(2*nbs)
-        for i in range(nbs):
-            rawSound[2*i], rawSound[2*i+1] = sound[0][i], sound[1][i]
+        rawSound = sound.T.reshape((1, 2*sound.shape[1]))[0, :]
     else:
         writeLog("error", "Not a mono nor stereo file")
-    rawSound = [crop(e, -32768, 32767) for e in rawSound]
     soundFile = wave.open(soundFileLoc, "w")
     soundFile.setparams(soundParams)
     # writing binary of nbch*nbs int, taken from rawSound
@@ -110,9 +82,9 @@ def write_sound(sound, soundParams, soundFileLoc):
 
 ### Function working on sounds ###
 
-def empty_sound(nbch, nbs):
+def empty_sound(nbch, nbs, dtype=np.int16):
     """Generates an empty sound"""
-    return [[0]*nbs for c in range(nbch)]
+    return np.zeros((nbch, nbs), dtype=dtype)
 
 
 def convert_to_mono(sound):
@@ -121,7 +93,7 @@ def convert_to_mono(sound):
     if nbch == 1:
         return sound
     elif nbch == 2:
-        return [[(v1+v2)//2 for v1, v2 in zip(sound[0], sound[1])]]
+        return np.array([(sound[0]/2 + sound[1]/2)]).astype(sound.dtype)
     else:
         writeLog("error", "Not a mono nor stereo file")
 
@@ -132,7 +104,7 @@ def convert_to_stereo(sound):
     if nbch == 2:
         return sound
     elif nbch == 1:
-        return [sound[0], sound[0]]
+        return np.array([sound[0], sound[0]])
     else:
         writeLog("error", "Not a mono nor stereo file")
 
