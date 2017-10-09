@@ -32,7 +32,7 @@ def display_params(soundParams):
 
 def extract_sound(soundFileLoc):
     """Extract the wav file soundFileLoc into a numpy array, shape (nbch, nbs)"""
-    timer_start("Extracting {}".format(soundFileLoc), True)
+    timer_start("Extracting {}".format(soundFileLoc))
     err_return = np.array([[]]), (0, 0, 0, 0, "NONE", "not compressed")
     if os.path.splitext(soundFileLoc)[1].lower() in (".mp3", ".wav", ".au"):
         try:
@@ -63,7 +63,7 @@ def extract_sound(soundFileLoc):
 
 def write_sound(sound, soundParams, soundFileLoc):
     """Write sound in wav file soundFileLoc, croping values (saturation)"""
-    timer_start("Writing {}".format(soundFileLoc), True)
+    timer_start("Writing {}".format(soundFileLoc))
     nbch, ss, _, nbs = soundParams[:4]
     if nbch == 1:
         rawSound = sound[0]
